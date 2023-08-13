@@ -5,6 +5,13 @@
     "name": "Erick Alvarez",
     "email": "erick.alvarez@live.com"
   },
+  "keywords": [
+    "firestore",
+    "firestore service",
+    "firebase",
+    "firebase service",
+    "fbservice"
+  ],
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "files": [
