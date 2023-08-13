@@ -1,6 +1,10 @@
 {
   "name": "fbservice",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "author": {
+    "name": "Erick Alvarez",
+    "email": "erick.alvarez@live.com"
+  },
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "files": [
@@ -20,5 +24,9 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "yup": "^1.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-user/repo-url.git"
   }
 }

@@ -32,18 +32,25 @@ interface GetAllProps<T> extends GetProps<T> {
 
 interface GetSingleProps<T> extends GetProps<T> {}
 
+interface FirestoreServiceProps {
+  modelName: string;
+  collectionSchema: ObjectSchema<any>;
+  environment: FirestoreEnvironment;
+  firestore: Firestore;
+}
+
 class FirestoreService<FirestoreCollection> {
   modelName = "";
   collectionSchema: ObjectSchema<any>;
   environment: FirestoreEnvironment;
   firestore: Firestore;
 
-  constructor(
-    modelName: string,
-    collectionSchema: ObjectSchema<any>,
-    environment: FirestoreEnvironment = "dev",
-    firestore: Firestore
-  ) {
+  constructor({
+    modelName,
+    collectionSchema,
+    environment = "dev",
+    firestore,
+  }: FirestoreServiceProps) {
     this.modelName = `${environment}-${modelName}`;
     this.collectionSchema = collectionSchema;
     this.environment = environment;
@@ -183,3 +190,4 @@ class FirestoreService<FirestoreCollection> {
 }
 
 export default FirestoreService;
+export type { FirestoreServiceProps };

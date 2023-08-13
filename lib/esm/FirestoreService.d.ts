@@ -10,12 +10,18 @@ interface GetAllProps<T> extends GetProps<T> {
 }
 interface GetSingleProps<T> extends GetProps<T> {
 }
+interface FirestoreServiceProps {
+    modelName: string;
+    collectionSchema: ObjectSchema<any>;
+    environment: FirestoreEnvironment;
+    firestore: Firestore;
+}
 declare class FirestoreService<FirestoreCollection> {
     modelName: string;
     collectionSchema: ObjectSchema<any>;
     environment: FirestoreEnvironment;
     firestore: Firestore;
-    constructor(modelName: string, collectionSchema: ObjectSchema<any>, environment: FirestoreEnvironment | undefined, firestore: Firestore);
+    constructor({ modelName, collectionSchema, environment, firestore, }: FirestoreServiceProps);
     parseItem(doc: DocumentSnapshot<DocumentData>): any;
     getEnvironment(): FirestoreEnvironment;
     getById(id: string): Promise<FirestoreCollection>;
@@ -26,3 +32,4 @@ declare class FirestoreService<FirestoreCollection> {
     delete(itemId: string, isSoftDelete?: boolean): Promise<void>;
 }
 export default FirestoreService;
+export type { FirestoreServiceProps };
