@@ -5,6 +5,25 @@
     "name": "Erick Alvarez",
     "email": "erick.alvarez@live.com"
   },
+  "scripts": {
+    "clean": "rm -rf lib",
+    "prebuild": "npm run clean",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
+    "prepublishOnly": "npm run build",
+    "version:major": "npm version major",
+    "version:minor": "npm version minor",
+    "version:patch": "npm version patch",
+    "version:rc": "npm version prerelease --preid=rc"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.197",
+    "firebase": "^10.1.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "yup": "^1.2.0"
+  },
   "keywords": [
     "firestore",
     "firestore service",
@@ -17,21 +36,6 @@
   "files": [
     "lib/"
   ],
-  "scripts": {
-    "clean": "rm -rf lib",
-    "prebuild": "npm run clean",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
-    "prepublishOnly": "npm run build"
-  },
-  "devDependencies": {
-    "@types/lodash": "^4.14.197",
-    "firebase": "^10.1.0",
-    "typescript": "^5.1.6"
-  },
-  "dependencies": {
-    "lodash": "^4.17.21",
-    "yup": "^1.2.0"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/eralvarez/fbservice.git"
