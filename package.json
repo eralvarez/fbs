@@ -1,6 +1,6 @@
 {
   "name": "fbservice",
-  "version": "0.0.5-rc.5",
+  "version": "0.0.5-rc.4",
   "author": {
     "name": "Erick Alvarez",
     "email": "erick.alvarez@live.com"
@@ -9,7 +9,6 @@
     "clean": "rm -rf lib",
     "prebuild": "npm run clean",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
-    "publish": "npm run publish",
     "prepublishOnly": "npm run build",
     "version:major": "npm version major",
     "version:minor": "npm version minor",
