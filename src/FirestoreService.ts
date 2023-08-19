@@ -1,3 +1,4 @@
+import { getApp, getApps, initializeApp } from "firebase/app";
 import {
   collection,
   getDocs,
@@ -14,9 +15,11 @@ import {
   WhereFilterOp,
   Firestore,
   DocumentSnapshot,
+  getFirestore,
+  onSnapshot,
 } from "firebase/firestore";
 import { has, get } from "lodash";
-import { ObjectSchema } from "yup";
+import { ObjectSchema, ValidationError, date as yupDate } from "yup";
 
 type FirestoreEnvironment = "dev" | "stage" | "prod";
 
@@ -28,36 +31,52 @@ interface GetProps<T> {
 
 interface GetAllProps<T> extends GetProps<T> {
   limitBy?: number;
+  showDeleted?: boolean;
 }
 
 interface GetSingleProps<T> extends GetProps<T> {}
 
+interface LogErrorProps {
+  type: string;
+  payload: any;
+}
+
 interface FirestoreServiceProps {
   modelName: string;
   collectionSchema: ObjectSchema<any>;
-  environment: FirestoreEnvironment;
-  firestore: Firestore;
+  firebaseConfig: any;
+  environment?: FirestoreEnvironment;
+  logErrorCollection?: string;
 }
 
 class FirestoreService<FirestoreCollection> {
-  modelName = "";
-  collectionSchema: ObjectSchema<any>;
-  environment: FirestoreEnvironment;
-  firestore: Firestore;
+  #modelName = "";
+  #logErrorModelName = "";
+  #collectionSchema: ObjectSchema<any>;
+  #environment: FirestoreEnvironment;
+  #firestore: Firestore;
 
   constructor({
     modelName,
     collectionSchema,
     environment = "dev",
-    firestore,
+    firebaseConfig,
+    logErrorCollection = "errors",
   }: FirestoreServiceProps) {
-    this.modelName = `${environment}-${modelName}`;
-    this.collectionSchema = collectionSchema;
-    this.environment = environment;
-    this.firestore = firestore;
+    this.#modelName = `${environment}-${modelName}`;
+    this.#logErrorModelName = `${environment}-${logErrorCollection}`;
+    this.#collectionSchema = collectionSchema.shape({
+      createdAt: yupDate().nullable(),
+      updatedAt: yupDate().nullable(),
+      deletedAt: yupDate().nullable(),
+    });
+    this.#environment = environment;
+    const app =
+      getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    this.#firestore = getFirestore(app);
   }
 
-  parseItem(doc: DocumentSnapshot<DocumentData>) {
+  #parseItem(doc: DocumentSnapshot<DocumentData>): FirestoreCollection {
     const item = doc.data();
     const dateKeys = ["createdAt", "updatedAt", "deletedAt"];
     const dateMap = new Map();
@@ -75,58 +94,119 @@ class FirestoreService<FirestoreCollection> {
     };
   }
 
+  async #logError(payload: LogErrorProps): Promise<void> {
+    const dbRef = collection(this.#firestore, this.#logErrorModelName);
+
+    await addDoc(dbRef, {
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date()),
+    });
+  }
+
   getEnvironment() {
-    return this.environment;
+    return this.#environment;
+  }
+
+  onChange(id: string, callback: (doc?: FirestoreCollection) => void) {
+    const docRef = doc(this.#firestore, this.#modelName, id);
+    const unsubscribe = onSnapshot(docRef, (doc) => {
+      const item = this.#parseItem(doc);
+      callback(item);
+    });
+
+    return unsubscribe;
   }
 
   async getById(id: string): Promise<FirestoreCollection> {
-    const docRef = doc(this.firestore, this.modelName, id);
-    const item = await getDoc(docRef);
+    try {
+      const docRef = doc(this.#firestore, this.#modelName, id);
+      const item = await getDoc(docRef);
 
-    return this.collectionSchema.cast(this.parseItem(item), {
-      stripUnknown: true,
-    });
+      return this.#collectionSchema.cast(this.#parseItem(item), {
+        stripUnknown: true,
+      });
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
+      // firebase error
+      await this.#logError({ type: "FirebaseError", payload: errorPayload });
+
+      throw error;
+    }
   }
 
   async getAll(
-    props: GetAllProps<FirestoreCollection>
+    props?: GetAllProps<FirestoreCollection>
   ): Promise<FirestoreCollection[]> {
-    const { whereConditions = [], limitBy = 20 } = props;
-    const items: FirestoreCollection[] = [];
-    const modelRef = collection(this.firestore, this.modelName);
-    let queryRef = query(modelRef, limit(limitBy));
-    whereConditions.forEach((whereCondition) => {
-      queryRef = query(
-        queryRef,
-        where(whereCondition.at(0), whereCondition.at(1), whereCondition.at(2))
+    try {
+      const whereConditions = props?.whereConditions || [];
+      const limitBy = props?.limitBy || 20;
+      const showDeleted = props?.showDeleted || false;
+
+      const items: FirestoreCollection[] = [];
+      const modelRef = collection(this.#firestore, this.#modelName);
+      let queryRef = query(modelRef, limit(limitBy));
+
+      if (!showDeleted) {
+        queryRef = query(queryRef, where("deletedAt", "==", null));
+      }
+
+      whereConditions.forEach((whereCondition) => {
+        queryRef = query(
+          queryRef,
+          where(
+            whereCondition[0] as string,
+            whereCondition[1],
+            whereCondition[2]
+          )
+        );
+      });
+      // https://firebase.google.com/docs/firestore/query-data/queries#or_queries
+      const querySnapshot = await getDocs(queryRef);
+
+      querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
+        const item = this.#parseItem(doc);
+        items.push(this.#collectionSchema.cast(item, { stripUnknown: true }));
+      });
+
+      return items;
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
       );
-    });
-    // https://firebase.google.com/docs/firestore/query-data/queries#or_queries
-    const querySnapshot = await getDocs(queryRef);
+      // firebase error
+      await this.#logError({ type: "FirebaseError", payload: errorPayload });
 
-    querySnapshot.forEach((doc) => {
-      const item = this.parseItem(doc);
-      items.push(this.collectionSchema.cast(item, { stripUnknown: true }));
-    });
-
-    return items;
+      throw error;
+    }
   }
 
   async getSingle(
     props?: GetSingleProps<FirestoreCollection>
   ): Promise<FirestoreCollection | null> {
-    const items = await this.getAll({ ...props, limitBy: 1 });
-    const response = items.length ? items.at(0)! : null;
+    try {
+      const items = await this.getAll({ ...props, limitBy: 1 });
+      const response = items.length ? items[0]! : null;
 
-    return response;
+      return response;
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
+      // firebase error
+      await this.#logError({ type: "FirebaseError", payload: errorPayload });
+
+      throw error;
+    }
   }
 
   async create(item: FirestoreCollection): Promise<FirestoreCollection> {
     try {
-      await this.collectionSchema.validate(item);
-      const dbRef = collection(this.firestore, this.modelName);
+      await this.#collectionSchema.validate(item);
+      const dbRef = collection(this.#firestore, this.#modelName);
 
-      const cleanItem = this.collectionSchema.cast(item, {
+      const cleanItem = this.#collectionSchema.cast(item, {
         stripUnknown: true,
       });
 
@@ -140,18 +220,30 @@ class FirestoreService<FirestoreCollection> {
       const createdItem = await this.getById(createdItemRef.id);
       return createdItem;
     } catch (error) {
-      // console.log(Array(40).join("-"));
-      // console.log(error);
-      // console.log(Array(40).join("*"));
-      throw new Error("item is invalid");
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
+      if (error instanceof ValidationError) {
+        await this.#logError({
+          type: "ValidationError",
+          payload: errorPayload,
+        });
+      } else {
+        // firebase error
+        await this.#logError({ type: "FirebaseError", payload: errorPayload });
+      }
+
+      throw error;
     }
   }
 
-  async update(itemId: string, item: FirestoreCollection) {
-    const docRef = doc(this.firestore, this.modelName, itemId);
+  async update(id: string, item: FirestoreCollection) {
+    try {
+      const docRef = doc(this.#firestore, this.#modelName, id);
 
-    if (this.collectionSchema.isValidSync(item)) {
-      const cleanItem = this.collectionSchema.cast(item, {
+      await this.#collectionSchema.validate(item);
+
+      const cleanItem = this.#collectionSchema.cast(item, {
         stripUnknown: true,
       });
       const cleanItemMap = new Map(Object.entries(cleanItem));
@@ -168,23 +260,46 @@ class FirestoreService<FirestoreCollection> {
         },
         { merge: true }
       );
-    } else {
-      throw new Error("item is invalid");
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
+      if (error instanceof ValidationError) {
+        await this.#logError({
+          type: "ValidationError",
+          payload: errorPayload,
+        });
+      } else {
+        // firebase error
+        await this.#logError({ type: "FirebaseError", payload: errorPayload });
+      }
+
+      throw error;
     }
   }
 
-  async delete(itemId: string, isSoftDelete = true) {
-    const docRef = doc(this.firestore, this.modelName, itemId);
-    if (isSoftDelete) {
-      await setDoc(
-        docRef,
-        {
-          deletedAt: Timestamp.fromDate(new Date()),
-        },
-        { merge: true }
+  async delete(id: string, isSoftDelete = true) {
+    try {
+      const docRef = doc(this.#firestore, this.#modelName, id);
+      if (isSoftDelete) {
+        await setDoc(
+          docRef,
+          {
+            deletedAt: Timestamp.fromDate(new Date()),
+          },
+          { merge: true }
+        );
+      } else {
+        await deleteDoc(docRef);
+      }
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
       );
-    } else {
-      await deleteDoc(docRef);
+      // firebase error
+      await this.#logError({ type: "FirebaseError", payload: errorPayload });
+
+      throw error;
     }
   }
 }

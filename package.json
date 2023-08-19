@@ -8,7 +8,9 @@
   "scripts": {
     "clean": "rm -rf lib",
     "prebuild": "npm run clean",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
+    "dev": "nodemon --watch src/ --ext ts,tsx,json --exec npm run build",
+    "build": "tsc -p tsconfig.json",
+    "build:old": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
     "prepublishOnly": "npm run build",
     "version:major": "npm version major",
     "version:minor": "npm version minor",
@@ -17,10 +19,11 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.197",
-    "firebase": "^10.1.0",
+    "nodemon": "^3.0.1",
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "firebase": "^10.2.0",
     "lodash": "^4.17.21",
     "yup": "^1.2.0"
   },

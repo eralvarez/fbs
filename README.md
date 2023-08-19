@@ -4,12 +4,13 @@ The FirestoreService class is a utility for interacting with a Firestore databas
 
 ## TODOs for v0.1.0
 
-- [ ] Create custom errors
+- [x] Add demo project inside library repo (CRA/Nextjs/RN Expo)
+- [x] Create custom errors?
+- [x] onChange method
 - [ ] At this moment we support `AND` conditions for querying, we should also support `OR`
 - [ ] Unit tests (pref Jest)
 - [ ] Support multiple schemas for get/create/update
 - [ ] Support realtime db
-- [ ] Add demo project inside library repo (CRA/Nextjs/RN Expo)
 - [ ] Support other schema validation libraries like zod?
 - [ ] React hook that exports all functions?
 
@@ -34,34 +35,34 @@ This library uses the yup schema to filter and validate data when we try to crea
 Example:
 
 ```javascript
-import * as Yup from "yup"; // Import Yup for schema validation
-import FirestoreService from "fbservices/FirestoreService";
-// Get your Firestore instance
-import { firestore } from "./config/firebase";
+import * as Yup from "yup";
+
+import FirestoreService from "../../../../lib/esm/FirestoreService";
+import { firebaseConfig } from "../config/firebase";
 
 // Define the schema for your collection items
-const userSchema = yup.object().shape({
-  id: yup.string(),
-  firstName: yup.string(),
-  lastName: yup.string(),
+const userSchema = Yup.object().shape({
+  id: Yup.string(),
+  firstName: Yup.string(),
+  lastName: Yup.string(),
+  age: Yup.number(),
 });
 
 // Infer user type
-type User = yup.InferType<typeof userSchema>;
+type User = Yup.InferType<typeof userSchema>;
 
 class UserService extends FirestoreService<User> {
   constructor() {
     super({
-      modelName: "users"
+      modelName: "users",
       collectionSchema: userSchema,
-      environment: "prod",
-      firestore
+      firebaseConfig,
     });
   }
 }
 
 export default UserService;
-export type { User }
+export type { User };
 ```
 
 ## Class Functionalities
@@ -73,22 +74,26 @@ constructor({
   modelName,
   collectionSchema,
   environment = "dev",
-  firestore,
+  firebaseConfig,
+  logErrorCollection = "errors",
 }: FirestoreServiceProps)
 ```
 
 The constructor initializes the `FirestoreService` instance with the given parameters:
 
-- `modelName` (string): The name of the Firestore collection.
-- `collectionSchema` (ObjectSchema): The schema definition for the collection items, created using Yup validation.
-- `environment` (FirestoreEnvironment): The environment context for the Firestore collection (dev, stage, prod).
-- `firestore` (Firestore): The Firestore instance obtained from the Firebase SDK.
+| key                  | description                                   | example                     | default  | required |
+| -------------------- | --------------------------------------------- | --------------------------- | -------- | -------- |
+| `modelName`          | firestore table/ collection name              | `users`                     | n/a      | `true`   |
+| `collectionSchema`   | YUP validation schema                         | `Yup.object().shape({...})` | n/a      | `true`   |
+| `environment`        | Project environment                           | `dev/stage/prod`            | `dev`    | `false`  |
+| `firebaseConfig`     | Firebase config obj                           | `{...}`                     | n/a      | `true`   |
+| `logErrorCollection` | Firestore table/collection name to log errors | `errors`                    | `errors` | `false`  |
 
 ### Methods
 
 1. `getById(id: string): Promise<FirestoreCollection>`: Fetches a document from the collection by its ID and returns it after schema validation.
 
-1. `getAll(props: GetAllProps<FirestoreCollection>): Promise<FirestoreCollection[]>`: Retrieves a list of documents from the collection based on optional filtering conditions and a limit. Returns an array of validated items.
+1. `getAll(props?: GetAllProps<FirestoreCollection>): Promise<FirestoreCollection[]>`: Retrieves a list of documents from the collection based on optional filtering conditions and a limit. Returns an array of validated items.
 
 1. `getSingle(props?: GetSingleProps<FirestoreCollection>): Promise<FirestoreCollection | null>`: Retrieves a single document from the collection based on optional filtering conditions. Returns null if no document is found or a validated item if found.
 
