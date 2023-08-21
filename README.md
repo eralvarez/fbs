@@ -4,6 +4,10 @@
 
 The FirestoreService class is a utility for interacting with a Firestore database using the Firebase JavaScript SDK. It provides a set of methods to perform common operations like fetching, creating, updating, and deleting documents in a Firestore collection. This class is designed to work with collections that adhere to a specific schema defined using the Yup validation library.
 
+<!-- ## Publish
+
+npm publish --access=public -->
+
 ## TODOs for v0.1.0
 
 - [x] Add demo project inside library repo (CRA/Nextjs/RN Expo)
