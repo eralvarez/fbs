@@ -3,10 +3,12 @@ import { useRef, useState, useEffect } from "react";
 import { faker } from "@faker-js/faker";
 
 import UserService from "../../services/UserService";
+import { PaginationOptions } from "../../../../../lib/esm/";
 
 const CrudExamplePage = () => {
   const { current: userService } = useRef(new UserService());
   const [users, setUsers] = useState<any[]>([]);
+  const [paginatedUsers, setPaginatedUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>();
   const [listenerUser, setListenerUser] = useState<any>();
 
@@ -25,6 +27,11 @@ const CrudExamplePage = () => {
     const _users = await userService.getAll();
     console.log(_users);
     setUsers(_users);
+  };
+
+  const loadPaginatedUsers = async (pagination?: PaginationOptions) => {
+    const _users = await userService.getAll({ limitBy: 2, pagination });
+    setPaginatedUsers(_users);
   };
 
   const handleCreateUser = async () => {
@@ -69,18 +76,21 @@ const CrudExamplePage = () => {
     } catch (error) {}
   };
 
+  // const handleNextPagination =
+
   return (
     <main>
       <button onClick={loadAllUsers}>Load users</button>
+      <button onClick={() => loadPaginatedUsers()}>Load paginated users</button>
       <hr />
       <button onClick={handleCreateUser}>Create user</button>
       <hr />
       <h4>Update user</h4>
       <p>Select a user form list and click update user</p>
-      <ul>
+      <ol>
         {users.map((user) => (
           <li key={user.id}>
-            <span>{`${user.firstName} ${user.lastName}`}</span>
+            <span>{`${user.firstName} ${user.lastName} - ${user.createdAt}`}</span>
             <button onClick={() => handleSelectUser(user)}>Select</button>
             <button onClick={() => handleDeleteUser(user, true)}>
               soft Delete
@@ -90,7 +100,7 @@ const CrudExamplePage = () => {
             </button>
           </li>
         ))}
-      </ul>
+      </ol>
       {selectedUser && <pre>{JSON.stringify(selectedUser, null, 2)}</pre>}
       <button onClick={handleUpdateUser}>update user</button>
 
@@ -101,6 +111,22 @@ const CrudExamplePage = () => {
           {listenerUser && <pre>{JSON.stringify(listenerUser, null, 2)}</pre>}
         </>
       )}
+
+      <hr />
+      <h4>pagination 2 by 2</h4>
+      <ol>
+        {paginatedUsers.map((user) => (
+          <li key={user.id}>
+            <span>{`${user.firstName} ${user.lastName} - ${user.createdAt}`}</span>
+          </li>
+        ))}
+      </ol>
+      <button onClick={() => loadPaginatedUsers(PaginationOptions.PREVIOUS)}>
+        prev
+      </button>
+      <button onClick={() => loadPaginatedUsers(PaginationOptions.NEXT)}>
+        next
+      </button>
     </main>
   );
 };

@@ -1,6 +1,6 @@
 import * as Yup from "yup";
 
-import FirestoreService from "../../../../lib/esm/FirestoreService";
+import { FirestoreService } from "../../../../lib/esm/";
 import { firebaseConfig } from "../config/firebase";
 
 // Define the schema for your collection items

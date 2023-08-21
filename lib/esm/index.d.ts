@@ -1,2 +1,3 @@
-import FirestoreService from "./FirestoreService.js";
-export { FirestoreService };
+export * from "./services/FirestoreService";
+export * from "./contexts/";
+export * from "./schemas/";

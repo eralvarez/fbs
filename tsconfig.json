@@ -3,11 +3,13 @@
     "target": "ES2015",
     "module": "ES2020",
     "strict": true,
+    "jsx": "react-jsx",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./lib/esm",
     "declaration": true,
     "moduleResolution": "NodeNext"
   },
-  "include": ["./src"]
+  "include": ["./src"],
+  "exclude": ["lib", "node_modules"]
 }

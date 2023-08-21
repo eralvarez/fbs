@@ -8,7 +8,11 @@ import {
   deleteDoc,
   doc,
   query,
+  orderBy,
+  startAfter,
+  endBefore,
   limit,
+  limitToLast,
   where,
   Timestamp,
   DocumentData,
@@ -17,11 +21,12 @@ import {
   DocumentSnapshot,
   getFirestore,
   onSnapshot,
+  QuerySnapshot,
 } from "firebase/firestore";
 import { has, get } from "lodash";
 import { ObjectSchema, ValidationError, date as yupDate } from "yup";
 
-type FirestoreEnvironment = "dev" | "stage" | "prod";
+type FirestoreEnvironment = "dev" | "stage" | "prod" | "";
 
 type WhereConditions<T> = [keyof T, WhereFilterOp, any];
 
@@ -29,8 +34,15 @@ interface GetProps<T> {
   whereConditions?: WhereConditions<T>[];
 }
 
+enum PaginationOptions {
+  NEXT = "next",
+  PREVIOUS = "previous",
+}
+
 interface GetAllProps<T> extends GetProps<T> {
   limitBy?: number;
+  page?: number;
+  pagination?: PaginationOptions;
   showDeleted?: boolean;
 }
 
@@ -55,11 +67,17 @@ class FirestoreService<FirestoreCollection> {
   #collectionSchema: ObjectSchema<any>;
   #environment: FirestoreEnvironment;
   #firestore: Firestore;
+  #latestGetAllResponseMap: Map<
+    number,
+    {
+      querySnapshot: QuerySnapshot<DocumentData, DocumentData>;
+    }
+  > = new Map();
 
   constructor({
     modelName,
     collectionSchema,
-    environment = "dev",
+    environment = "",
     firebaseConfig,
     logErrorCollection = "errors",
   }: FirestoreServiceProps) {
@@ -141,12 +159,38 @@ class FirestoreService<FirestoreCollection> {
   ): Promise<FirestoreCollection[]> {
     try {
       const whereConditions = props?.whereConditions || [];
-      const limitBy = props?.limitBy || 20;
+      const limitBy = props?.limitBy || 10;
+      const pagination = props?.pagination;
       const showDeleted = props?.showDeleted || false;
 
       const items: FirestoreCollection[] = [];
       const modelRef = collection(this.#firestore, this.#modelName);
-      let queryRef = query(modelRef, limit(limitBy));
+      let queryRef = query(
+        modelRef,
+        limit(limitBy),
+        orderBy("createdAt", "desc")
+      );
+
+      if (
+        pagination !== undefined &&
+        this.#latestGetAllResponseMap.has(limitBy)
+      ) {
+        const latestGetAllResponse = this.#latestGetAllResponseMap.get(limitBy);
+
+        if (pagination === PaginationOptions.NEXT) {
+          queryRef = query(
+            queryRef,
+            startAfter(latestGetAllResponse?.querySnapshot.docs.at(-1)),
+            limit(limitBy)
+          );
+        } else if (pagination === PaginationOptions.PREVIOUS) {
+          queryRef = query(
+            queryRef,
+            endBefore(latestGetAllResponse?.querySnapshot.docs.at(0)),
+            limitToLast(limitBy)
+          );
+        }
+      }
 
       if (!showDeleted) {
         queryRef = query(queryRef, where("deletedAt", "==", null));
@@ -163,7 +207,21 @@ class FirestoreService<FirestoreCollection> {
         );
       });
       // https://firebase.google.com/docs/firestore/query-data/queries#or_queries
-      const querySnapshot = await getDocs(queryRef);
+      let querySnapshot = await getDocs(queryRef);
+
+      if (querySnapshot.docs.length > 0) {
+        this.#latestGetAllResponseMap.set(limitBy, {
+          querySnapshot,
+        });
+      } else {
+        const lastQuerySnapshot =
+          this.#latestGetAllResponseMap.get(limitBy)?.querySnapshot;
+        querySnapshot = lastQuerySnapshot!;
+
+        this.#latestGetAllResponseMap.set(limitBy, {
+          querySnapshot,
+        });
+      }
 
       querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
         const item = this.#parseItem(doc);
@@ -304,5 +362,5 @@ class FirestoreService<FirestoreCollection> {
   }
 }
 
-export default FirestoreService;
+export { FirestoreService, PaginationOptions };
 export type { FirestoreServiceProps };

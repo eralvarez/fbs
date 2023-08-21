@@ -1,12 +1,18 @@
 import { WhereFilterOp } from "firebase/firestore";
 import { ObjectSchema } from "yup";
-type FirestoreEnvironment = "dev" | "stage" | "prod";
+type FirestoreEnvironment = "dev" | "stage" | "prod" | "";
 type WhereConditions<T> = [keyof T, WhereFilterOp, any];
 interface GetProps<T> {
     whereConditions?: WhereConditions<T>[];
 }
+declare enum PaginationOptions {
+    NEXT = "next",
+    PREVIOUS = "previous"
+}
 interface GetAllProps<T> extends GetProps<T> {
     limitBy?: number;
+    page?: number;
+    pagination?: PaginationOptions;
     showDeleted?: boolean;
 }
 interface GetSingleProps<T> extends GetProps<T> {
@@ -30,5 +36,5 @@ declare class FirestoreService<FirestoreCollection> {
     update(id: string, item: FirestoreCollection): Promise<void>;
     delete(id: string, isSoftDelete?: boolean): Promise<void>;
 }
-export default FirestoreService;
+export { FirestoreService, PaginationOptions };
 export type { FirestoreServiceProps };
