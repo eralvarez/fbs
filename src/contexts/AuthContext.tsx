@@ -1,38 +1,16 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  Context,
-  ReactNode,
-  useRef,
-} from "react";
-import {
-  Auth,
-  onAuthStateChanged,
-  User,
-  UserCredential,
-  signInAnonymously,
-  signOut,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { ObjectSchema, AnyObject } from "yup";
-
-import { getApp, getAuth } from "../config/firebase";
-import UserProfileService from "../services/UserProfileService";
+import { createContext, useContext, ReactNode } from "react";
+import { Auth, User, UserCredential } from "firebase/auth";
 import { FirebaseApp, FirebaseOptions } from "firebase/app";
 
-// yup.InferType<typeof userProfileSchema>;
+import { useAuth } from "../hooks/useAuth";
 
 interface AuthContext {
   user: User | null;
   hasAuth: boolean;
   authLoading: boolean;
   isAnonymous: boolean;
-  userProfile: any;
-  // userProfileService: UserProfileService<ObjectSchema<AnyObject>>;
   app: FirebaseApp;
   auth: Auth;
   handleSignInAnonymously: () => Promise<UserCredential>;
@@ -43,70 +21,25 @@ interface AuthContext {
   ) => Promise<UserCredential>;
 }
 
-const AuthContext = createContext<AuthContext | null>(null);
+const AuthContext = createContext<AuthContext | undefined>(undefined);
 
-interface AuthContextProviderProps<UserProfile> {
+interface AuthProviderProps {
   firebaseConfig: FirebaseOptions;
-  userProfileSchema: ObjectSchema<UserProfile & AnyObject>;
   children: ReactNode;
 }
 
-function AuthContextProvider<UserProfile>({
-  firebaseConfig,
-  userProfileSchema,
-  children,
-}: AuthContextProviderProps<UserProfile>) {
-  const { current: app } = useRef(getApp(firebaseConfig));
-  const { current: auth } = useRef(getAuth(app));
-
-  const { current: userProfileService } = useRef(
-    new UserProfileService<UserProfile>(firebaseConfig, userProfileSchema)
-  );
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [hasAuth, setHasAuth] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [isAnonymous, setIsAnonymousUser] = useState(false);
-
-  useEffect(() => {
-    const unsubscribeFromAuthStatusChanged = onAuthStateChanged(
-      auth,
-      (user) => {
-        setAuthLoading(false);
-        if (user) {
-          setUser(user);
-          setHasAuth(true);
-          setIsAnonymousUser(user.isAnonymous);
-          loadUserProfile(user);
-        } else {
-          // User is signed out
-          setUser(null);
-          setHasAuth(false);
-          setIsAnonymousUser(false);
-          setUserProfile(null);
-        }
-      }
-    );
-    return () => unsubscribeFromAuthStatusChanged();
-  }, []);
-
-  const loadUserProfile = async (user: User) => {
-    try {
-      const profile = await userProfileService.getSingle({
-        whereConditions: [["authId" as keyof UserProfile, "==", user.uid]],
-      });
-      setUserProfile(profile);
-    } catch (error) {}
-  };
-
-  const handleSignInAnonymously = async () => await signInAnonymously(auth);
-
-  const handleSignOut = async () => await signOut(auth);
-
-  const handleSignInWithEmailAndPassword = async (
-    email: string,
-    password: string
-  ) => await signInWithEmailAndPassword(auth, email, password);
+const AuthProvider = ({ firebaseConfig, children }: AuthProviderProps) => {
+  const {
+    user,
+    hasAuth,
+    authLoading,
+    isAnonymous,
+    app,
+    auth,
+    handleSignInAnonymously,
+    handleSignOut,
+    handleSignInWithEmailAndPassword,
+  } = useAuth({ firebaseConfig });
 
   return (
     <AuthContext.Provider
@@ -115,7 +48,6 @@ function AuthContextProvider<UserProfile>({
         hasAuth,
         authLoading,
         isAnonymous,
-        userProfile,
         app,
         auth,
         handleSignInAnonymously,
@@ -126,9 +58,16 @@ function AuthContextProvider<UserProfile>({
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-const useAuthContext = () =>
-  useContext<AuthContext>(AuthContext as Context<AuthContext>);
+const useAuthContext = () => {
+  const context = useContext(AuthContext);
 
-export { AuthContext, AuthContextProvider, useAuthContext };
+  if (!context) {
+    throw new Error("useAuthContext must be used within a ThemeProvider");
+  }
+
+  return context;
+};
+
+export { AuthContext, AuthProvider, useAuthContext };

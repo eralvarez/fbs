@@ -3,7 +3,6 @@
 import { signInAnonymously, signOut } from "firebase/auth";
 
 import { useAuthContext } from "../../../../../lib/esm/";
-// import { auth } from "../../config/firebase";
 
 const AuthPage = () => {
   const { auth, hasAuth, isAnonymous, handleSignInAnonymously } =

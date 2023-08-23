@@ -1,6 +1,6 @@
 import { WhereFilterOp } from "firebase/firestore";
 import { ObjectSchema } from "yup";
-type FirestoreEnvironment = "dev" | "stage" | "prod" | "";
+type FirestoreEnvironment = "dev" | "stage" | "prod";
 type WhereConditions<T> = [keyof T, WhereFilterOp, any];
 interface GetProps<T> {
     whereConditions?: WhereConditions<T>[];

@@ -26,7 +26,7 @@ import {
 import { has, get } from "lodash";
 import { ObjectSchema, ValidationError, date as yupDate } from "yup";
 
-type FirestoreEnvironment = "dev" | "stage" | "prod" | "";
+type FirestoreEnvironment = "dev" | "stage" | "prod";
 
 type WhereConditions<T> = [keyof T, WhereFilterOp, any];
 
@@ -77,7 +77,7 @@ class FirestoreService<FirestoreCollection> {
   constructor({
     modelName,
     collectionSchema,
-    environment = "",
+    environment = "dev",
     firebaseConfig,
     logErrorCollection = "errors",
   }: FirestoreServiceProps) {
