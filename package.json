@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "nodemon --watch src/ --ext ts,tsx,json --exec npm run build",
     "clean": "rm -rf lib",
-    "prebuild": "npm run clean",
+    "prebuildx": "npm run clean",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
     "prepublishOnly": "npm run build",
     "version:major": "npm version major",
@@ -25,6 +25,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "encoding": "^0.1.13",
     "firebase": "^10.2.0",
     "lodash": "^4.17.21",
     "yup": "^1.2.0"

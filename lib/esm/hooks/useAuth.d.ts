@@ -9,6 +9,7 @@ declare const useAuth: ({ firebaseConfig, onSignOut }: UseAuthProps) => {
     hasAuth: boolean;
     authLoading: boolean;
     isAnonymous: boolean;
+    isLoading: boolean;
     app: import("@firebase/app").FirebaseApp;
     auth: import("@firebase/auth").Auth;
     handleSignInAnonymously: () => Promise<import("@firebase/auth").UserCredential>;

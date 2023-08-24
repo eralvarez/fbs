@@ -20,6 +20,7 @@ const useAuth = ({ firebaseConfig, onSignOut }: UseAuthProps) => {
   const { current: app } = useRef(getApp(firebaseConfig));
   const { current: auth } = useRef(getAuth(app));
 
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [hasAuth, setHasAuth] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -44,6 +45,8 @@ const useAuth = ({ firebaseConfig, onSignOut }: UseAuthProps) => {
             onSignOut();
           }
         }
+
+        setIsLoading(false);
       }
     );
     return () => unsubscribeFromAuthStatusChanged();
@@ -63,6 +66,7 @@ const useAuth = ({ firebaseConfig, onSignOut }: UseAuthProps) => {
     hasAuth,
     authLoading,
     isAnonymous,
+    isLoading,
     app,
     auth,
     handleSignInAnonymously,

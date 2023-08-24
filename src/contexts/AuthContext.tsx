@@ -40,6 +40,8 @@ const AuthProvider = ({ firebaseConfig, children }: AuthProviderProps) => {
     handleSignOut,
     handleSignInWithEmailAndPassword,
   } = useAuth({ firebaseConfig });
+  console.log('AuthProvider!');
+  alert('LO')
 
   return (
     <AuthContext.Provider
