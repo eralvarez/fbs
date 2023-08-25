@@ -1,16 +1,7 @@
 import { ReactNode } from "react";
-import { Auth, User, UserCredential } from "firebase/auth";
-import { FirebaseApp, FirebaseOptions } from "firebase/app";
-interface AuthContext {
-    user: User | null;
-    hasAuth: boolean;
-    authLoading: boolean;
-    isAnonymous: boolean;
-    app: FirebaseApp;
-    auth: Auth;
-    handleSignInAnonymously: () => Promise<UserCredential>;
-    handleSignOut: () => Promise<void>;
-    handleSignInWithEmailAndPassword: (email: string, password: string) => Promise<UserCredential>;
+import { FirebaseOptions } from "firebase/app";
+import { useAuth } from "../hooks/useAuth";
+interface AuthContext extends ReturnType<typeof useAuth> {
 }
 declare const AuthContext: import("react").Context<AuthContext | undefined>;
 interface AuthProviderProps {
