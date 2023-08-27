@@ -125,11 +125,18 @@ class FirestoreService<FirestoreCollection> {
     return this.#environment;
   }
 
-  onChange(id: string, callback: (doc?: FirestoreCollection) => void) {
+  onChange(
+    id: string,
+    callback: (doc?: FirestoreCollection | undefined) => void
+  ) {
     const docRef = doc(this.#firestore, this.#modelName, id);
     const unsubscribe = onSnapshot(docRef, (doc) => {
-      const item = this.#parseItem(doc);
-      callback(item);
+      if (doc) {
+        const item = this.#parseItem(doc);
+        callback(item);
+      } else {
+        callback();
+      }
     });
 
     return unsubscribe;
