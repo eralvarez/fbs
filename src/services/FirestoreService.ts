@@ -131,7 +131,7 @@ class FirestoreService<FirestoreCollection> {
   ) {
     const docRef = doc(this.#firestore, this.#modelName, id);
     const unsubscribe = onSnapshot(docRef, (doc) => {
-      if (doc) {
+      if (doc.exists()) {
         const item = this.#parseItem(doc);
         callback(item);
       } else {
