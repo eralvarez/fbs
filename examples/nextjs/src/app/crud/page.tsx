@@ -11,17 +11,37 @@ const CrudExamplePage = () => {
   const [paginatedUsers, setPaginatedUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>();
   const [listenerUser, setListenerUser] = useState<any>();
+  const [listenerUser2, setListenerUser2] = useState<any>();
 
   useEffect(() => {
     if (selectedUser) {
-      const unsubscribe = userService.onChange(selectedUser.id, (_user) => {
-        console.log(JSON.stringify(_user, null, 2));
-        setListenerUser(_user);
-      });
+      // Elaina
+      // selectedUser.id
+      const unsubscribe = userService.onChange(
+        ["firstName", "==", "Elaina"],
+        (_user) => {
+          console.log(JSON.stringify(_user, null, 2));
+          setListenerUser(_user);
+        }
+      );
 
       return () => unsubscribe();
     }
   }, [selectedUser]);
+
+  useEffect(() => {
+    // Elaina
+    // selectedUser.id
+    const unsubscribe = userService.onChange(
+      ["firstName", "==", "Erickk"],
+      (_user) => {
+        console.log(JSON.stringify(_user, null, 2));
+        setListenerUser2(_user);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const loadAllUsers = async () => {
     const _users = await userService.getAll();
@@ -127,6 +147,14 @@ const CrudExamplePage = () => {
       <button onClick={() => loadPaginatedUsers(PaginationOptions.NEXT)}>
         next
       </button>
+
+      <hr />
+      {listenerUser2 && (
+        <>
+          <h4>listener user 2</h4>
+          {listenerUser2 && <pre>{JSON.stringify(listenerUser2, null, 2)}</pre>}
+        </>
+      )}
     </main>
   );
 };

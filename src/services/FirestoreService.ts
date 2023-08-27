@@ -1,4 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
+import { Unsubscribe } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -130,11 +131,26 @@ class FirestoreService<FirestoreCollection> {
     callback: (doc?: FirestoreCollection | undefined) => void
   ) {
     let docRef: any;
+    let unsubscribe: Unsubscribe;
+
     if (typeof idOrWhereCondition === "string") {
       docRef = doc(
         this.#firestore,
         this.#modelName,
         idOrWhereCondition as string
+      );
+      unsubscribe = onSnapshot(
+        docRef,
+        (doc: DocumentSnapshot<DocumentData>) => {
+          console.log("doc DocumentSnapshot");
+          console.log(doc);
+          if (doc && doc.exists()) {
+            const item = this.#parseItem(doc);
+            callback(item);
+          } else {
+            callback();
+          }
+        }
       );
     } else {
       const modelRef = collection(this.#firestore, this.#modelName);
@@ -146,13 +162,61 @@ class FirestoreService<FirestoreCollection> {
           idOrWhereCondition[2]
         )
       );
+
+      unsubscribe = onSnapshot(
+        docRef,
+        (querySnapshot: QuerySnapshot<DocumentData>) => {
+          console.log("doc QuerySnapshot");
+          console.log(querySnapshot);
+          if (!querySnapshot.empty) {
+            const items: FirestoreCollection[] = [];
+
+            querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
+              const item = this.#parseItem(doc);
+              items.push(
+                this.#collectionSchema.cast(item, { stripUnknown: true })
+              );
+            });
+
+            callback(items[0]);
+          } else {
+            callback();
+          }
+        }
+      );
     }
+
+    return unsubscribe;
+  }
+
+  onMultipleChanges(
+    idOrWhereCondition: WhereConditions<FirestoreCollection>,
+    callback: (docs?: FirestoreCollection[] | undefined) => void
+  ) {
+    const modelRef = collection(this.#firestore, this.#modelName);
+    const docRef = query(
+      modelRef,
+      where(
+        idOrWhereCondition[0] as string,
+        idOrWhereCondition[1],
+        idOrWhereCondition[2]
+      )
+    );
+
     const unsubscribe = onSnapshot(
       docRef,
-      (doc: DocumentSnapshot<DocumentData>) => {
-        if (doc && doc.exists()) {
-          const item = this.#parseItem(doc);
-          callback(item);
+      (querySnapshot: QuerySnapshot<DocumentData>) => {
+        if (!querySnapshot.empty) {
+          const items: FirestoreCollection[] = [];
+
+          querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
+            const item = this.#parseItem(doc);
+            items.push(
+              this.#collectionSchema.cast(item, { stripUnknown: true })
+            );
+          });
+
+          callback(items);
         } else {
           callback();
         }
