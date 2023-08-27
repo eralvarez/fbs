@@ -28,7 +28,7 @@ declare class FirestoreService<FirestoreCollection> {
     #private;
     constructor({ modelName, collectionSchema, environment, firebaseConfig, logErrorCollection, }: FirestoreServiceProps);
     getEnvironment(): FirestoreEnvironment;
-    onChange(id: string, callback: (doc?: FirestoreCollection | undefined) => void): import("@firebase/firestore").Unsubscribe;
+    onChange(idOrWhereCondition: string | WhereConditions<FirestoreCollection>, callback: (doc?: FirestoreCollection | undefined) => void): import("@firebase/firestore").Unsubscribe;
     getById(id: string): Promise<FirestoreCollection>;
     getAll(props?: GetAllProps<FirestoreCollection>): Promise<FirestoreCollection[]>;
     getSingle(props?: GetSingleProps<FirestoreCollection>): Promise<FirestoreCollection | null>;

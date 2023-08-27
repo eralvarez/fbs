@@ -126,18 +126,38 @@ class FirestoreService<FirestoreCollection> {
   }
 
   onChange(
-    id: string,
+    idOrWhereCondition: string | WhereConditions<FirestoreCollection>,
     callback: (doc?: FirestoreCollection | undefined) => void
   ) {
-    const docRef = doc(this.#firestore, this.#modelName, id);
-    const unsubscribe = onSnapshot(docRef, (doc) => {
-      if (doc.exists()) {
-        const item = this.#parseItem(doc);
-        callback(item);
-      } else {
-        callback();
+    let docRef: any;
+    if (typeof idOrWhereCondition === "string") {
+      docRef = doc(
+        this.#firestore,
+        this.#modelName,
+        idOrWhereCondition as string
+      );
+    } else {
+      const modelRef = collection(this.#firestore, this.#modelName);
+      docRef = query(
+        modelRef,
+        where(
+          idOrWhereCondition[0] as string,
+          idOrWhereCondition[1],
+          idOrWhereCondition[2]
+        )
+      );
+    }
+    const unsubscribe = onSnapshot(
+      docRef,
+      (doc: DocumentSnapshot<DocumentData>) => {
+        if (doc.exists()) {
+          const item = this.#parseItem(doc);
+          callback(item);
+        } else {
+          callback();
+        }
       }
-    });
+    );
 
     return unsubscribe;
   }
