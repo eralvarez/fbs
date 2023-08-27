@@ -150,7 +150,7 @@ class FirestoreService<FirestoreCollection> {
     const unsubscribe = onSnapshot(
       docRef,
       (doc: DocumentSnapshot<DocumentData>) => {
-        if (doc.exists()) {
+        if (doc && doc.exists()) {
           const item = this.#parseItem(doc);
           callback(item);
         } else {
