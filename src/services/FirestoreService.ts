@@ -142,8 +142,6 @@ class FirestoreService<FirestoreCollection> {
       unsubscribe = onSnapshot(
         docRef,
         (doc: DocumentSnapshot<DocumentData>) => {
-          console.log("doc DocumentSnapshot");
-          console.log(doc);
           if (doc && doc.exists()) {
             const item = this.#parseItem(doc);
             callback(item);
@@ -166,8 +164,6 @@ class FirestoreService<FirestoreCollection> {
       unsubscribe = onSnapshot(
         docRef,
         (querySnapshot: QuerySnapshot<DocumentData>) => {
-          console.log("doc QuerySnapshot");
-          console.log(querySnapshot);
           if (!querySnapshot.empty) {
             const items: FirestoreCollection[] = [];
 
