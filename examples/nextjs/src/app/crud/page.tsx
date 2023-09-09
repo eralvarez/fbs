@@ -96,12 +96,22 @@ const CrudExamplePage = () => {
     } catch (error) {}
   };
 
-  // const handleNextPagination =
+  const handleGetSingle = async () => {
+    try {
+      const user = await userService.getSingle({
+        whereConditions: [["age", "==", 10000000]],
+      });
+      console.log(user);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <main>
       <button onClick={loadAllUsers}>Load users</button>
       <button onClick={() => loadPaginatedUsers()}>Load paginated users</button>
+      <button onClick={handleGetSingle}>get single user</button>
       <hr />
       <button onClick={handleCreateUser}>Create user</button>
       <hr />

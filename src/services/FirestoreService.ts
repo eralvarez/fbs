@@ -310,10 +310,12 @@ class FirestoreService<FirestoreCollection> {
         });
       }
 
-      querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
-        const item = this.#parseItem(doc);
-        items.push(this.#collectionSchema.cast(item, { stripUnknown: true }));
-      });
+      if (querySnapshot) {
+        querySnapshot.forEach((doc: DocumentSnapshot<DocumentData>) => {
+          const item = this.#parseItem(doc);
+          items.push(this.#collectionSchema.cast(item, { stripUnknown: true }));
+        });
+      }
 
       return items;
     } catch (error) {
