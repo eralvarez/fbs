@@ -186,18 +186,21 @@ class FirestoreService<FirestoreCollection> {
   }
 
   onMultipleChanges(
-    idOrWhereCondition: WhereConditions<FirestoreCollection>,
+    idOrWhereCondition: WhereConditions<FirestoreCollection> | null = null,
     callback: (docs?: FirestoreCollection[] | undefined) => void
   ) {
     const modelRef = collection(this.#firestore, this.#modelName);
-    const docRef = query(
-      modelRef,
-      where(
-        idOrWhereCondition[0] as string,
-        idOrWhereCondition[1],
-        idOrWhereCondition[2]
-      )
-    );
+    const docRef =
+      idOrWhereCondition !== null
+        ? query(
+            modelRef,
+            where(
+              idOrWhereCondition[0] as string,
+              idOrWhereCondition[1],
+              idOrWhereCondition[2]
+            )
+          )
+        : query(modelRef);
 
     const unsubscribe = onSnapshot(
       docRef,
