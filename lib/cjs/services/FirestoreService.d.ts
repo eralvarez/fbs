@@ -30,7 +30,7 @@ declare class FirestoreService<FirestoreCollection> {
     constructor({ modelName, collectionSchema, environment, firebaseConfig, logErrorCollection, }: FirestoreServiceProps);
     getEnvironment(): FirestoreEnvironment;
     onChange(idOrWhereCondition: string | WhereConditions<FirestoreCollection>, callback: (doc?: FirestoreCollection | undefined) => void): Unsubscribe;
-    onMultipleChanges(idOrWhereCondition: WhereConditions<FirestoreCollection>, callback: (docs?: FirestoreCollection[] | undefined) => void): import("@firebase/firestore").Unsubscribe;
+    onMultipleChanges(idOrWhereCondition: WhereConditions<FirestoreCollection> | null | undefined, callback: (docs?: FirestoreCollection[] | undefined) => void): import("@firebase/firestore").Unsubscribe;
     getById(id: string): Promise<FirestoreCollection>;
     getAll(props?: GetAllProps<FirestoreCollection>): Promise<FirestoreCollection[]>;
     getSingle(props?: GetSingleProps<FirestoreCollection>): Promise<FirestoreCollection | null>;
