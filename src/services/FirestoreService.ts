@@ -428,6 +428,35 @@ class FirestoreService<FirestoreCollection> {
     }
   }
 
+  async restore(id: string) {
+    try {
+      const docRef = doc(this.#firestore, this.#modelName, id);
+
+      await setDoc(
+        docRef,
+        {
+          deletedAt: null,
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      const errorPayload = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
+      if (error instanceof ValidationError) {
+        await this.#logError({
+          type: "ValidationError",
+          payload: errorPayload,
+        });
+      } else {
+        // firebase error
+        await this.#logError({ type: "FirebaseError", payload: errorPayload });
+      }
+
+      throw error;
+    }
+  }
+
   async delete(id: string, isSoftDelete = true) {
     try {
       const docRef = doc(this.#firestore, this.#modelName, id);
