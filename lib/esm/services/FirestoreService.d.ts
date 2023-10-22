@@ -36,6 +36,7 @@ declare class FirestoreService<FirestoreCollection> {
     getSingle(props?: GetSingleProps<FirestoreCollection>): Promise<FirestoreCollection | null>;
     create(item: FirestoreCollection): Promise<FirestoreCollection>;
     update(id: string, item: FirestoreCollection): Promise<void>;
+    restore(id: string): Promise<void>;
     delete(id: string, isSoftDelete?: boolean): Promise<void>;
 }
 export { FirestoreService, PaginationOptions };
